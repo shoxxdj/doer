@@ -1,0 +1,32 @@
+[project]
+name = "doer"
+version = "0.2.0"
+description = "A YAML-driven workflow executor for security auditing and automation"
+authors = [
+    {name = "shoxxdj", email = "shoxx@shoxxdj.fr"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pychalk (>=2.0.1,<3.0.0)",
+    "pyyaml (>=6.0.3,<7.0.0)",
+    "requests (>=2.32.5,<3.0.0)"
+]
+
+[project.scripts]
+doer = "doer.doer:main"
+
+[tool.poetry.scripts]
+doer = "doer.doer:main"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]

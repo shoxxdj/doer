@@ -1,0 +1,31 @@
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+
+# Logs produced by doer
+logs/
+
+# nmap output files
+*.nmap.xml
+*.nmap
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+
+# Poetry
+poetry.lock

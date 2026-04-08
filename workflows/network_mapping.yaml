@@ -1,0 +1,99 @@
+name: network mapping
+vars:
+  required:
+    - URL
+  optional:
+    - SCRIPTS
+steps:
+  - do_clean_url
+  - do_host
+  - do_http_methods
+  - do_nmap
+  - analyze_nmap
+  - do_http_headers
+  - generate_text
+
+do_clean_url:
+  type: shell
+  command_line: $SCRIPTS/variable_management/url_to_domain.py $URL
+  result: clean_url
+
+do_host:
+  type: shell
+  command_line: host $clean_url
+  result: output_host
+
+do_nmap:
+  type: shell
+  command_line: nmap $clean_url -oX $clean_url.nmap.xml
+
+analyze_nmap:
+  type: shell
+  command_line: $SCRIPTS/tools/analyze_nmap.py $clean_url.nmap.xml
+  result: output_analyze_nmap
+
+do_http_methods:
+  type: shell
+  command_line: $SCRIPTS/web/http_methods.py $URL --json
+  result: output_http_methods
+
+do_http_headers:
+  type: shell
+  command_line: $SCRIPTS/web/http_headers.py $URL --json
+  result: output_http_headers
+
+generate_text:
+  steps:
+    - content:
+        - type: text
+          value: "début du rapport"
+    - content:
+        - type: extract
+          value: $output_http_methods.summary
+    - content:
+        - type: text
+          value: "L'application est accessible via l'url $URL, nous vérifions l'addresse IP correspondante :"
+
+    - content:
+        - type: extract
+          value: $output_host
+
+    - content:
+        - type: text
+          value: "Nous effectuons ensuite un scan de ports dont le résultat est le suivant : "
+
+    - content:
+        - type: nmap
+          value: $clean_url.nmap.xml
+
+    - when: '$output_analyze_nmap.result == "web_only"'
+      content:
+        - type: text
+          value: "Nous constatons que seul les ports web sont accessibles"
+        - type: text
+          value: "Et donc tout va bien !"
+
+    - when: '$output_analyze_nmap.result == "many_ports_open"'
+      content:
+        - type: text
+          value: "Beaucoup de ports sont ouverts"
+        - type: text
+          value: "Et donc c'est pas fou"
+    - content:
+        - type: extract
+          value: $output_http_headers.raw_headers
+
+    - content:
+        - type: text
+          value: "Nous analysons les entêtes HTTP, le résultat est : "
+
+    - content:
+        - type: extract
+          value: $output_http_headers.findings
+
+    - when: '$output_http_headers.condition == "critical"'
+      content:
+        - type: text
+          value: "Non mais la c'est critique +++"
+        - type: extract
+          value: $output_http_headers.raw_headers
