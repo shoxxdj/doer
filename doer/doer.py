@@ -9,7 +9,7 @@ optional variables fall back to defaults or are skipped.
 
 VERSION = "0.2.0"
 VERSION_NAME = "Cleaned up"
-CREDITS_STRING = "shoxxdj, claude.ai"
+CREDITS_STRING = "shoxxdj, claude.ai (for cleaning)"
 
 import ast
 import importlib.util
@@ -476,64 +476,6 @@ class WorkflowExecutor:
             self.logger.error(f"WHEN evaluation error for '{expression}': {exc}")
             return False
 
-    # ------------------------------------------------------------------
-    # Output generation
-    # ------------------------------------------------------------------
-    def generate_content(self, content_items: List[Dict[str, Any]]) -> str:
-        """Render a list of content items into a text string."""
-        parts: List[str] = []
-
-        for item in content_items:
-            item_type = item.get("type")
-            value = item.get("value", "")
-
-            if item_type == "text":
-                parts.append(self.substitute_variables(str(value)))
-
-            elif item_type == "extract":
-                key = str(value).lstrip("$")
-                if "." in key:
-                    root, path = key.split(".", 1)
-                    resolved = self._resolve_path(root, path)
-                    if resolved is not None:
-                        parts.append(self.substitute_variables(str(resolved)))
-                    else:
-                        msg = f"[Variable '${key}' not found]"
-                        self.logger.warning(msg)
-                        parts.append(msg)
-                elif key in self.results:
-                    parts.append(self.substitute_variables(str(self.results[key])))
-                else:
-                    msg = f"[Variable '${key}' not found]"
-                    self.logger.warning(msg)
-                    parts.append(msg)
-
-            elif item_type == "nmap":
-                nmap_path = self.substitute_variables(str(value))
-                parts.append(self._format_nmap_file(nmap_path))
-
-        return "\n".join(parts)
-
-    def generate_text(self, step_config: Dict[str, Any]) -> str:
-        """
-        Produce final text output from the 'generate_text' section,
-        honouring any 'when' guards on individual sub-steps.
-        """
-        output_blocks: List[str] = []
-
-        for step in step_config.get("steps", []):
-            when = step.get("when")
-            if when and not self.evaluate_when(when):
-                self.logger.debug(f"WHEN skipped: {when}")
-                continue
-
-            if "content" in step:
-                block = self.generate_content(step["content"])
-                if block.strip():
-                    output_blocks.append(block)
-
-        return "\n\n".join(output_blocks)
-
     def run_custom_output(self) -> None:
         """
         Dynamically load a user-supplied Python module and call its ``main``
@@ -660,7 +602,9 @@ class WorkflowExecutor:
                 if getattr(self.options, "custom_output", None):
                     self.run_custom_output()
                 else:
-                    print(self.generate_text(self.workflow["generate_text"]))
+                    self.options.custom_output="custom_output/builtin.py"
+                    self.run_custom_output()
+                    #print(self.generate_text(self.workflow["generate_text"]))
                 continue
 
             ok = self.execute_step(step_name)
