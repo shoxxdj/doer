@@ -29,3 +29,9 @@ logs/
 
 # Poetry
 poetry.lock
+
+#Custom
+custom_output/
+!custom_output/builtin.py
+!custom_output/text.py
+
